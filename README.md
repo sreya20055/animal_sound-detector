@@ -507,9 +507,9 @@ https://drive.google.com/folderview?id=1XzUwpCCM4k7AlxwoEtwJ4cpaDXm_r0Gy
 
 Sreya V- TinyML
 
-Aleena Mary Anil - Documentation
+Aleena Mary Anil - Web
 
-Nandana Jayachandran - Web
+Nandana Jayachandran - Documentation
 
 
 ## Badges

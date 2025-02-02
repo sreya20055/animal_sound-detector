@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Animal Sound Detector</title>
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --success-color: #4CAF50;
+            --warning-color: #FFC107;
+            --error-color: #F44336;
+            --bg-color: #f5f7fa;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #1a237e;
+            padding: 1rem;
+            border-radius: 10px;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, #1a237e, #0d47a1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-container {
+            margin-bottom: 1rem;
+        }
+
+        .status {
+            padding: 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+            text-align: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .status.error {
+            background-color: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #c62828;
+        }
+
+        .status.connected {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #2e7d32;
+        }
+
+        .main-detection {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .animal-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .animal-label {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #1a237e;
+            margin: 1rem 0;
+            text-transform: capitalize;
+        }
+
+        .confidence-container {
+            margin-top: 1.5rem;
+        }
+
+        .confidence-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #424242;
+        }
+
+        .confidence-bar {
+            height: 12px;
+            background-color: #e0e0e0;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .confidence-value {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), #64b5f6);
+            border-radius: 6px;
+            transition: width 0.5s ease-in-out;
+        }
+
+        .all-predictions {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .prediction-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .prediction-card.active {
+            box-shadow: 0 0 15px rgba(33, 150, 243, 0.5);
+            transform: scale(1.05);
+        }
+
+        .prediction-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .prediction-label {
+            font-weight: 500;
+            color: #424242;
+            margin-bottom: 0.5rem;
+        }
+
+        .prediction-score {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Animal Sound Detector</h1>
+        </div>
+
+        <div class="status-container" id="status-box"></div>
+
+        <div class="main-detection">
+            <div id="animal-icon" class="animal-icon">🔊</div>
+            <div id="animal-label" class="animal-label">Waiting for detection...</div>
+
+            <div class="confidence-container">
+                <div class="confidence-label">
+                    <span>Confidence</span>
+                    <span id="confidence-percentage">0%</span>
+                </div>
+                <div class="confidence-bar">
+                    <div id="confidence-value" class="confidence-value" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="all-predictions" id="all-predictions"></div>
+    </div>
+
+    <script>
+        const animalIcons = {
+            'bear': '🐻',
+            'cat': '🐱',
+            'chicken': '🐔',
+            'cow': '🐄',
+            'dog': '🐕',
+            'donkey': '🫏',
+            'elephant': '🐘',
+            'frog': '🐸',
+            'lion': '🦁',
+            'monkey': '🐒',
+            'sheep': '🐑',
+            'default': '🔊'
+        };
+
+        function getAnimalIcon(label) {
+            const normalizedLabel = label.toLowerCase().trim();
+            return animalIcons[normalizedLabel] || animalIcons.default;
+        }
+
+        function updatePrediction() {
+            fetch('/get_prediction')
+                .then(response => response.json())
+                .then(data => {
+                    // Update connection status
+                    const statusBox = document.getElementById('status-box');
+                    if (data.status.connected) {
+                        statusBox.innerHTML = '<div class="status connected">Connected to device</div>';
+                    } else {
+                        statusBox.innerHTML = `<div class="status error">
+                            ${data.status.error || 'Connection lost. Attempting to reconnect...'}
+                        </div>`;
+                    }
+
+                    // Update main prediction
+                    const label = data.prediction.label;
+                    const confidence = (data.prediction.confidence * 100).toFixed(1);
+
+                    document.getElementById('animal-icon').textContent = getAnimalIcon(label);
+                    document.getElementById('animal-label').textContent = label;
+
+                    const confidenceElement = document.getElementById('confidence-value');
+                    const confidencePercentage = document.getElementById('confidence-percentage');
+                    confidenceElement.style.width = confidence + '%';
+                    confidencePercentage.textContent = confidence + '%';
+
+                    // Update all predictions
+                    const allPredictionsContainer = document.getElementById('all-predictions');
+                    allPredictionsContainer.innerHTML = '';
+
+                    Object.entries(data.prediction.all_predictions).forEach(([animal, score]) => {
+                        const isHighest = animal === label;
+                        const predictionCard = document.createElement('div');
+                        predictionCard.className = `prediction-card ${isHighest ? 'active' : ''}`;
+                        predictionCard.innerHTML = `
+                            <div class="prediction-icon">${getAnimalIcon(animal)}</div>
+                            <div class="prediction-label">${animal}</div>
+                            <div class="prediction-score">${(score * 100).toFixed(1)}%</div>
+                        `;
+                        allPredictionsContainer.appendChild(predictionCard);
+                    });
+
+                    // Add pulse animation if confidence is high
+                    const animalIcon = document.getElementById('animal-icon');
+                    if (confidence > 80) {
+                        animalIcon.classList.add('pulse');
+                    } else {
+                        animalIcon.classList.remove('pulse');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Update every second
+        setInterval(updatePrediction, 1000);
+    </script>
+</body>
+</html>

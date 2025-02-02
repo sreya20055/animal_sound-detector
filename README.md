@@ -115,6 +115,7 @@ o	Specifications:
 •	PDM Digital Microphone 
 
 o	Specifications: 
+
     	Sampling Rate: 16 kHz
 
     	Mono Channel
@@ -130,7 +131,230 @@ o	Specifications:
     
     •	Internet connection (for initial setup)
 
-## Implementation
+
+## TinyML
+
+## Animal Sound Classification Model Architecture
+
+### Feature Extraction: Mel-filterbank Energy (MFE)
+
+### Optimized Parameters
+
+#### Frame length: 0.025s (25ms)
+
+Provides better temporal resolution for audio analysis
+Standard in speech/audio processing for capturing phonetic transitions
+
+
+#### Frame stride: 0.010s (10ms)
+
+60% overlap between consecutive frames
+Ensures smooth temporal transitions
+
+
+#### Number of filters: 64
+
+Increased spectral resolution
+Better frequency band separation
+More detailed representation of the audio spectrum
+
+
+#### FFT length: 512 points
+
+Higher frequency resolution
+
+Better spectral detail capture
+
+Good balance between computation and detail
+
+
+#### Frequency range: 50Hz - 10000Hz
+
+Low frequency cutoff (50Hz) removes environmental noise
+
+High frequency ceiling (10000Hz) captures animal vocalizations
+
+Covers most animal sound frequencies
+
+
+#### Noise floor: -90dB
+
+Good dynamic range for capturing quiet sounds
+
+Helps in distinguishing subtle audio features
+
+
+
+### Feature Generation Process
+
+Audio signal segmentation into 25ms frames
+
+Hamming window application to reduce spectral leakage
+
+FFT computation (512-point)
+
+Mel-filterbank application (64 filters)
+
+Energy calculation per filter
+
+Logarithmic compression
+
+Per-feature normalization
+
+### Model Architecture: 2D Convolutional Neural Network
+### Network Structure
+
+### Input Layer
+
+#### Shape: (Time frames × 64 mel filters)
+
+Represents time-frequency distribution
+
+
+### Convolutional Layers
+
+Multiple 2D convolution blocks
+
+Each block typically contains:
+
+2D Convolution
+
+Batch Normalization
+
+ReLU Activation
+
+Max Pooling
+
+
+
+
+#### Dense Layers
+
+Flatten layer to convert 2D features to 1D
+
+Multiple dense layers with dropout
+
+Final softmax layer for classification
+
+
+
+### Advantages of 2D CNN for Audio
+
+#### Pattern Recognition
+
+Captures both time and frequency patterns
+
+Learns hierarchical features
+
+Robust to small time shifts
+
+
+#### Feature Learning
+
+Automatic feature extraction
+
+Learning of relevant patterns
+
+Time-frequency relationship preservation
+
+
+#### Efficiency
+
+Parameter sharing reduces model size
+
+Suitable for embedded deployment
+
+Fast inference on microcontrollers
+
+
+
+### Training Process
+
+#### Dataset Preparation
+
+#### Audio Preprocessing
+
+Resampling to consistent rate
+
+Silence removal
+
+Background noise reduction
+
+Volume normalization
+
+
+#### Feature Extraction
+
+MFE computation with optimized parameters
+
+Feature normalization
+
+#### Data augmentation techniques:
+
+Time shifting
+
+Pitch shifting
+
+Speed perturbation
+
+Noise addition
+
+
+
+
+
+### Training Strategy
+
+#### Model Training
+
+Cross-validation for robustness
+
+Early stopping to prevent overfitting
+
+Learning rate scheduling
+
+Batch size optimization
+
+
+### Quantization
+
+#### Post-training quantization
+
+Int8 quantization for microcontroller deployment
+
+Minimal accuracy loss
+
+
+### Performance Metrics
+
+Classification accuracy
+
+Confusion matrix analysis
+
+Inference time monitoring
+
+Model size optimization
+
+
+
+### Edge Impulse Deployment
+
+#### Model Conversion
+
+TensorFlow Lite conversion
+
+Optimized for Arduino deployment
+
+Memory footprint reduction
+
+
+#### Inference Optimization
+
+Buffer management
+
+Efficient audio capture
+
+Real-time processing capabilities## Implementation
 ### Software Installation
 
 1.	Clone the repository:
@@ -212,7 +436,10 @@ python app.py
 
 
 ## Screenshots
+![IMG-20250202-WA0019](https://github.com/user-attachments/assets/1b5dd16d-9503-4173-ac35-c8e9d17949fa)
+![IMG-20250202-WA0017](https://github.com/user-attachments/assets/e005dbc4-3346-4a56-8270-8b83302d5f25)
 
+![IMG-20250202-WA0018](https://github.com/user-attachments/assets/fe6775b5-9e6a-493b-b67b-72ae20452eb5)
 
 
 
@@ -220,12 +447,71 @@ python app.py
 
 ## Diagrams
 
+```mermaid 
+flowchart TD
+    subgraph Hardware
+        M[PDM Microphone] -->|Audio Input| A[Arduino Board]
+    end
+
+    subgraph Arduino_Processing
+        A -->|Capture Audio| B[Audio Buffer]
+        B -->|Process| C[Edge Impulse SDK]
+        C -->|Run Inference| D[TFLite Model]
+        D -->|Generate| E[Predictions]
+        E -->|Serial Output| F[USB Communication]
+    end
+
+    subgraph Python_Backend
+        F -->|Read Serial| G[Serial Reader Thread]
+        G -->|Parse Data| H[Flask Server]
+        H -->|Store| I[Latest Predictions]
+    end
+
+    subgraph Web_Frontend
+        J[Browser] -->|HTTP Request| K[/get_prediction API/]
+        K -->|JSON Response| L[Update UI]
+        L -->|Display| M1[Main Detection]
+        L -->|Display| M2[Confidence Bar]
+        L -->|Display| M3[All Predictions]
+        L -->|Display| M4[Connection Status]
+    end
+
+    I -->|Serve Data| K
+    
+    subgraph Update_Loop
+        M1 & M2 & M3 & M4 -->|Every 1s| J
+    end
+
+    style Hardware fill:#e1f5fe
+    style Arduino_Processing fill:#fff3e0
+    style Python_Backend fill:#e8f5e9
+    style Web_Frontend fill:#f3e5f5
+    style Update_Loop fill:#fafafa
+
+```
+
 ## Schematic & Circuit
+![download](https://github.com/user-attachments/assets/057bc1a3-59d1-4fff-9d02-2a7ab9d49bb3)
+
+
 ## Build Photos
+![20250202_103123](https://github.com/user-attachments/assets/cae88890-2924-49ae-b8b6-5df142c74c3c)
 
 
 ## Video
+
+```bash 
+https://drive.google.com/folderview?id=1XzUwpCCM4k7AlxwoEtwJ4cpaDXm_r0Gy
+```
 ## Team Contributions
+
+Sreya V- TinyML
+
+Aleena Mary Anil - Documentation
+
+Nandana Jayachandran - Web
+
+
 ## Badges
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
